@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXORA · See what's next.</title>
+<meta name="description" content="NEXORA: cash-flow forecasting and financial health checks for small businesses.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar" aria-label="Sections">
+    <a class="brand" href="#top" aria-label="NEXORA home"><svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0F1B33" stroke="#22D3EE" stroke-width="1.5"/><path d="M8 23V9l16 14V9" fill="none" stroke="#22D3EE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>NEXORA</span></a>
+    <a class="nav" href="#data" data-target="data"><i>⇪</i><span>Data</span></a>
+    <a class="nav" href="#overview" data-target="overview"><i>◎</i><span>Overview</span></a>
+    <a class="nav" href="#forecast" data-target="forecast"><i>⌁</i><span>Forecast</span></a>
+    <a class="nav" href="#health" data-target="health"><i>♡</i><span>Health</span></a>
+    <a class="nav" href="#alerts" data-target="alerts"><i>!</i><span>Alerts</span></a>
+    <a class="nav" href="#obligations" data-target="obligations"><i>☰</i><span>Obligations</span></a>
+    <a class="nav" href="#recs" data-target="recs"><i>✓</i><span>Actions</span></a>
+  </nav>
+
+  <main id="top">
+    <header class="topbar">
+      <div class="title">
+        <p class="eyebrow">NEXORA · See what's next.</p>
+        <label class="sr-only" for="bizName">Business name</label>
+        <input id="bizName" class="biz" value="My Business" maxlength="80" autocomplete="off">
+        <p class="sub"><span id="asOfChip">No data loaded</span></p>
+      </div>
+      <div class="top-actions">
+        <label class="sr-only" for="period">Reporting period</label>
+        <select id="period" title="Reporting period for totals">
+          <option value="">All history</option>
+          <option value="30">Last 30 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="7">Last 7 days</option>
+        </select>
+        <button id="btnDemo" class="btn primary" type="button">Load demo data</button>
+        <button id="btnReset" class="btn" type="button">Reset</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner" role="status" aria-live="polite" hidden></div>
+
+    <section id="data" class="panel">
+      <div class="panel-head"><h2>Data &amp; validation</h2><span class="tag">synthetic demo data · nothing is stored</span></div>
+      <div class="data-grid">
+        <label id="drop" class="drop" for="file">
+          <input id="file" type="file" accept=".csv,text/csv" hidden>
+          <strong>Drop a CSV here or click to choose</strong>
+          <span>Up to 1 MB · UTF-8 · ISO dates (YYYY-MM-DD)</span>
+        </label>
+        <div class="data-actions">
+          <button id="btnAnalyze" class="btn primary" type="button" disabled>Analyze records</button>
+          <a class="btn" href="/sample_transactions.csv" download>Download sample CSV</a>
+          <details class="schema"><summary>CSV format</summary>
+            <p><b>Required:</b> transaction_id, transaction_date, description, transaction_type, amount</p>
+            <p><b>Optional:</b> category, due_date, expected_payment_date, actual_payment_date, loan_repayment_due_date, opening_balance, linked_invoice_id</p>
+            <p><b>transaction_type:</b> income, expense (cash already moved) · invoice (customer owes you) · bill (you owe a supplier) · loan_repayment. Invoices, bills and loans count as cash only once actual_payment_date is filled in. Amounts are positive; the type sets the direction.</p>
+          </details>
+        </div>
+      </div>
+      <div id="valStatus" class="val" hidden></div>
+    </section>
+
+    <div id="empty" class="empty panel">
+      <h2>See your next 30 days of cash</h2>
+      <p>Load the demo business to explore NEXORA, or upload a transaction CSV. NEXORA works out your balance, forecasts cash day by day, and explains every warning with the rule behind it.</p>
+      <div class="row"><button class="btn primary" type="button" id="btnDemo2">Load demo data</button><button class="btn" type="button" id="btnPick">Upload a CSV</button></div>
+    </div>
+
+    <div id="dash" hidden>
+      <section id="overview">
+        <div class="section-head"><h2>Overview</h2>
+          <label class="check"><input type="checkbox" id="showFormulas"> Show formulas</label></div>
+        <div id="cards" class="cards"></div>
+      </section>
+
+      <section id="forecast" class="panel">
+        <div class="panel-head">
+          <h2>Cash-flow forecast</h2>
+          <div class="seg" role="group" aria-label="Forecast period">
+            <button type="button" class="seg-btn" data-h="7" aria-pressed="false">7 days</button>
+            <button type="button" class="seg-btn" data-h="30" aria-pressed="true">30 days</button>
+          </div>
+        </div>
+        <p class="estimate"><b>Estimate.</b> A transparent baseline built from your scheduled receipts, bills, loan repayments and detected recurring costs. It is not a trained prediction model.</p>
+        <div class="fc-grid">
+          <div class="fc-main">
+            <div id="fcStats" class="stats"></div>
+            <div id="chartWrap" class="chart-wrap"></div>
+            <div id="drivers" class="drivers"></div>
+            <div class="table-scroll"><table id="fcTable" class="tbl"></table></div>
+          </div>
+          <aside class="assume" aria-label="Forecast assumptions">
+            <h3>Assumptions</h3>
+            <p class="hint">Change anything: the forecast recalculates immediately.</p>
+            <div class="field"><label for="sOpening">Opening balance (₹)</label><input id="sOpening" type="number" step="any" placeholder="from file"><small id="sOpeningHint"></small></div>
+            <div class="field"><label for="sReserve">Minimum cash reserve (₹)</label><input id="sReserve" type="number" min="0" step="any"></div>
+            <div class="field"><label for="sDelay">Delay all customer receipts (days)</label><input id="sDelay" type="number" min="0" max="180" step="1"></div>
+            <div class="field"><label for="sAdj">Adjust expected expenses (%)</label><input id="sAdj" type="number" min="-50" max="200" step="1"></div>
+            <div class="field"><label for="sVar">Extra variable spend (₹ per day)</label><input id="sVar" type="number" min="0" step="any"><small><button type="button" class="link" id="useSuggested">Use suggested</button> <span id="sVarHint"></span></small></div>
+            <div class="field inline"><input id="sCollect" type="checkbox"><label for="sCollect">Assume overdue invoices get paid</label></div>
+            <div class="field"><label for="sLag">…this many days after the reporting date</label><input id="sLag" type="number" min="1" max="180" step="1"></div>
+            <div class="field"><label for="sAsOf">Reporting date (blank = latest transaction)</label><input id="sAsOf" type="date"></div>
+            <button id="btnResetAssume" class="btn small" type="button">Reset assumptions</button>
+            <details class="assume-list"><summary>What this forecast assumes</summary><ul id="assumeList"></ul><div id="recurList"></div></details>
+          </aside>
+        </div>
+      </section>
+
+      <section id="health" class="panel">
+        <div class="panel-head"><h2>Financial health profile</h2><span class="tag">heuristic · not a credit score</span></div>
+        <div id="healthBody" class="health"></div>
+      </section>
+
+      <section id="alerts" class="panel">
+        <div class="panel-head"><h2>Warnings &amp; risk alerts</h2>
+          <div class="seg" role="group" aria-label="Filter alerts" id="alertFilter">
+            <button type="button" class="seg-btn" data-sev="all" aria-pressed="true">All</button>
+            <button type="button" class="seg-btn" data-sev="high" aria-pressed="false">High</button>
+            <button type="button" class="seg-btn" data-sev="medium" aria-pressed="false">Medium</button>
+            <button type="button" class="seg-btn" data-sev="low" aria-pressed="false">Low</button>
+          </div></div>
+        <p class="hint">Rule-based checks on your numbers. A warning means "worth a look", not proof of error or fraud.</p>
+        <div id="alertList" class="alerts"></div>
+        <ul id="skipped" class="skipped"></ul>
+      </section>
+
+      <section id="obligations" class="panel">
+        <div class="panel-head"><h2>Receivables &amp; upcoming payments</h2></div>
+        <p class="hint">Edit a date to test "what if this is paid earlier or later?". The forecast updates immediately.</p>
+        <h3>Unpaid invoices (money coming in)</h3>
+        <div class="table-scroll"><table id="recvTable" class="tbl"></table></div>
+        <h3>Upcoming payments, next 30 days (money going out)</h3>
+        <div class="table-scroll"><table id="payTable" class="tbl"></table></div>
+      </section>
+
+      <section id="recs" class="panel">
+        <div class="panel-head"><h2>Recommended actions</h2><span class="tag">rule-based · no generative AI</span></div>
+        <div id="recList2" class="recs"></div>
+      </section>
+    </div>
+
+    <footer class="foot">NEXORA is an analysis aid, not financial, tax or legal advice. Demo data is synthetic. Your CSV is processed for this request only and is not stored.</footer>
+  </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>
